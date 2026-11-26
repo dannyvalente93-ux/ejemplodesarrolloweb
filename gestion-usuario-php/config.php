@@ -1,22 +1,13 @@
 <?php
-session_start();
+$servidor = "sql313.infinityfree.com";
+$usuario = "if0_43534964";
+$contraseña = "i6TdFL5xgdCM"; // Pon tu contraseña real entre las comillas
+$base_datos = "if0_43534964_ejemplosdesarrolloweb";
 
-$servidor = "localhost";
-$usuario = "root";
-$contrasena = "";
-$base_datos = "usuariobd";
-
-$conexion = new mysqli($servidor, $usuario, $contrasena, $base_datos);
-
-if ($conexion->connect_error) {
-    die("Error de conexión: " . $conexion->connect_error);
-}
-
-// Función para verificar si el usuario ha iniciado sesión
-function verificarSesion() {
-    if (!isset($_SESSION['usuario_id'])) {
-        header("Location: login.php");
-        exit();
-    }
+try {
+    $conexion = new PDO("mysql:host=$servidor;dbname=$base_datos;charset=utf8", $usuario, $contraseña);
+    $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("Error de conexión: " . $e->getMessage());
 }
 ?>

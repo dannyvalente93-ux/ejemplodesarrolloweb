@@ -1,40 +1,41 @@
-<<?php
+<?php
+session_start();
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 require 'config.php';
+
+$error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $correo = trim($_POST['correo']);
-    $password = trim($_POST['password']);
+    $contraseña = isset($_POST['contraseña']) ? $_POST['contraseña'] : '';
 
-    if (empty($correo) || empty($password)) {
-        header("Location: login.php?error=vacio");
-        exit();
-    }
+    if (!empty($correo) && !empty($contraseña)) {
+        try {
+            $stmt = $conexion->prepare("SELECT * FROM usuarios WHERE correo = :correo");
+            $stmt->bindParam(':correo', $correo);
+            $stmt->execute();
+            $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Buscar usuario
-    $stmt = $conexion->prepare("SELECT id, nombre, password FROM usuarios WHERE correo = ?");
-    $stmt->bind_param("s", $correo);
-    $stmt->execute();
-    $stmt->store_result();
-
-    if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id, $nombre, $password_hash);
-        $stmt->fetch();
-
-        // Usar password_verify() como pide la seguridad
-        if (password_verify($password, $password_hash)) {
-            // Crear sesión
-            $_SESSION['usuario_id'] = $id;
-            $_SESSION['usuario_nombre'] = $nombre;
-            $_SESSION['correo'] = $correo;
-            
-            header("Location: panel.php");
-            exit();
+            if ($usuario && password_verify($contraseña, $usuario['password'])) {
+                $_SESSION['usuario_id'] = $usuario['id'];
+                $_SESSION['usuario_nombre'] = $usuario['nombre'];
+                header("Location: panel.php");
+                exit;
+            } else {
+                $error = "Correo o contraseña incorrectos";
+            }
+        } catch (PDOException $e) {
+            $error = "Error: " . $e->getMessage();
         }
+    } else {
+        $error = "Por favor completa todos los campos";
     }
-    $stmt->close();
-    
-    // Credenciales incorrectas
-    header("Location: login.php?error=credenciales");
-    exit();
+}
+
+if (!empty($error)) {
+    echo "<p style='color:red; text-align:center; font-weight:bold;'>$error</p>";
+    echo "<p style='text-align:center;'><a href='login.php'>Volver al inicio</a></p>";
 }
 ?>
